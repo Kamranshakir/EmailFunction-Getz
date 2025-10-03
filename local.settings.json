@@ -1,0 +1,19 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "AzureWebJobsDashboard": "UseDevelopmentStorage=true",
+    "SMTP_SERVER": "mail.sepiacms.com", // or your SMTP server
+    "SMTP_PORT": "587", // 587 (TLS) or 465 (SSL)
+    "SMTP_USER": "loci@sepiacms.com", // SMTP login email
+    "SMTP_PASS": "Sepia@CMSDemo#123", // SMTP password 
+    "FROM_EMAIL": "test@sepiacms.com", // Sender email 
+    "ENABLE_SSL": "false",
+    "TenantId": "3f9827bd-3709-41bc-9f53-0ec850e140cf",
+    "ClientId": "69cceed7-70fd-4b81-bc57-df25c661fc0f",
+    "ClientSecret": "V7P8Q~pqFje4t5q1QpxGl-0pF_BpJ~S1TlPh-cTI",
+    "SiteId": "sepiahost.sharepoint.com,6912fee1-9f4f-4aff-85be-8070a6b6ad07,c804f247-3aaf-4352-ba94-bbe0f35f30dd",
+    "BaseUrl": "http://localhost:7065/api/SendEmail"
+  }
+}
