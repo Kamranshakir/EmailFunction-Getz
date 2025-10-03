@@ -1,0 +1,23 @@
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      },
+      "enableLiveMetricsFilters": true
+    }
+  },
+  "extensions": {
+    "http": {
+      "routePrefix": "api",
+      "cors": {
+        "allowedOrigins": [ "https://getzpharma.sharepoint.com" ], // Replace with your URL
+        "allowedMethods": [ "GET", "POST"],
+        "allowedHeaders": [ "Content-Type", "Authorization", "Accept" ],
+        "allowCredentials": false // Set to `true` if using cookies/auth
+      }
+    }
+  }
+}
