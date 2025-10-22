@@ -22,6 +22,7 @@ public class FunctionSendEmail
     private static readonly string clientId = Environment.GetEnvironmentVariable("ClientId");
     private static readonly string clientSecret = Environment.GetEnvironmentVariable("ClientSecret");
     private static readonly string siteId = Environment.GetEnvironmentVariable("SiteId");
+    private static readonly string myPendingUrl = Environment.GetEnvironmentVariable("MY_PENDING_URL");
 
     public FunctionSendEmail(ILoggerFactory loggerFactory)
     {
@@ -64,6 +65,77 @@ public class FunctionSendEmail
         public int DelegatedTaskCount { get; set; }
     }
 
+    [Function("DailyProcessAppsData")]
+    public async Task RunAppsDataAsync([TimerTrigger("%ProcessAppsData_Timer%")] TimerInfo timer)
+    {
+        _logger.LogInformation($"ProcessAppsData triggered at: {DateTime.Now}");
+
+        //var endpointUrl = "https://<your-function-app-name>.azurewebsites.net/api/process-appsData";
+        var endpointUrl = "http://localhost:7065/api/process-appsData";
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, endpointUrl);
+
+            // ✅ Add required headers
+            //request.Headers.Add("x-functions-key", "ibrin0nPBmLbP2pEf2");
+            //request.Headers.Add("Accept", "application/json"); // optional
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Successfully called ProcessApplicationData. Response: {result}");
+            }
+            else
+            {
+                _logger.LogWarning($"ProcessApplicationData returned {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error calling ProcessApplicationData: {ex.Message}");
+        }
+
+        _logger.LogInformation("ProcessAppsData completed.");
+    }
+
+    [Function("DailyProcessUserEmailData")]
+    public async Task RunUserEmailDataAsync([TimerTrigger("%ProcessUserEmailData_Timer%")] TimerInfo timer)
+    {
+        _logger.LogInformation($"ProcessUserEmailData triggered at: {DateTime.Now}");
+
+        //var endpointUrl = "https://<your-function-app-name>.azurewebsites.net/api/process-appsData";
+        var endpointUrl = "http://localhost:7065/api/process-userEmailData";
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, endpointUrl);
+
+            // ✅ Add required headers
+            //request.Headers.Add("x-functions-key", "ibrin0nPBmLbP2pEf2");
+            //request.Headers.Add("Accept", "application/json"); // optional
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Successfully called GetUserEmailData. Response: {result}");
+            }
+            else
+            {
+                _logger.LogWarning($"GetUserEmailData returned {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error calling GetUserEmailData: {ex.Message}");
+        }
+
+        _logger.LogInformation("ProcessUserEmailData completed.");
+    }
 
     public async Task<bool> DeleteUserEmailData()
     {
@@ -280,7 +352,7 @@ public class FunctionSendEmail
                     }
                     else
                     {
-                        Console.WriteLine("Item created successfully.");
+                        Console.WriteLine("User remainder item created successfully.");
                     }
 
                 }
@@ -369,7 +441,7 @@ public class FunctionSendEmail
                                     var delegatedProp = x.GetProperty("fields").GetProperty("DelegatedTaskCount");
                                     return delegatedProp.ValueKind == JsonValueKind.Number ? (int)delegatedProp.GetDouble() : 0;
                                 })
-                        })
+                        }).OrderByDescending(x => x.TaskCount)
                         .ToList()
                 })
                 .ToList();
@@ -411,21 +483,20 @@ public class FunctionSendEmail
 
             if (response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"Email sent to {user.Email}");
+                Console.WriteLine($"Remainder email sent to {user.Email}");
             }
             else
             {
-                Console.WriteLine($"Failed to send email to {user.Email}: {await response.Content.ReadAsStringAsync()}");
+                Console.WriteLine($"Failed to send remainder email to {user.Email}: {await response.Content.ReadAsStringAsync()}");
             }
         }
     }
-
 
     [Function("SendEmail")]
     public async Task<HttpResponseData> SendEmail(
     [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req)
     {
-        _logger.LogInformation("C# HTTP trigger function processed a request.");
+        _logger.LogInformation("Sending Email Triggered");
 
         var response = req.CreateResponse();
 
@@ -497,24 +568,6 @@ public class FunctionSendEmail
         }
 
         return response;
-    }
-
-    private string ProcessTemplate(EmailRequest request)
-    {
-        // Replace placeholders with actual values
-        string body = request.BodyTemplate
-            .Replace("{RecipientName}", request.RecipientName ?? "Valued User")
-            .Replace("{CaseNo}", request.CaseNo ?? "N/A")
-            .Replace("{Decision}", request.Decision ?? "Pending")
-            .Replace("{DeepLink}", request.DeepLink ?? string.Empty);
-
-        // Add signature if requested
-        if (request.InclSignature)
-        {
-            body += "\n\n" + GetEmailSignature();
-        }
-
-        return body;
     }
 
     private string GenerateEmailSubject(EmailRequest request)
@@ -686,8 +739,14 @@ public class FunctionSendEmail
     {
         var sb = new StringBuilder();
 
-        sb.Append("<h2 style='text-align:center;'>My Pending Tasks</h2>");
-        sb.Append("<table border='1' rules='cols' style='width:70%; margin:20px auto; border:1px solid lightgrey; border-radius:10px; border-collapse:separate; overflow:hidden;'>");
+        // ✉️ Introductory Text
+        sb.Append("<div style='font-family:Segoe UI, sans-serif; color:#333; line-height:1.5;'>");
+        sb.Append($"<p>Dear <b>{userName}</b>,</p>");
+        sb.Append($"<p>Below is a summary of your current pending and delegated tasks. <a href='{myPendingUrl}' style='color:#0078d7; text-decoration:none; font-weight:bold;'>Click here</a> to review and take action:</p>");
+
+        // 🧩 Table
+        sb.Append("<h2 style='text-align:center; color:#2f4f6f;'>My Pending Tasks</h2>");
+        sb.Append("<table border='1' rules='cols' style='width:70%; margin:20px auto; border:1px solid #ddd; border-radius:10px; border-collapse:separate; overflow:hidden; font-family:Segoe UI, sans-serif;'>");
         sb.Append("<tr style='background:#f7f9fb;'>");
         sb.Append("<th style='text-align:center; padding:12px;'>Application</th>");
         sb.Append("<th style='text-align:center; padding:12px;'>Pending Tasks</th>");
@@ -704,8 +763,12 @@ public class FunctionSendEmail
         }
 
         sb.Append("</table>");
-        return sb.ToString();
-    }
 
+        sb.Append("<p style='margin-top:20px;'>Thank you,<br/>This is system generated email.</p>");
+        sb.Append("</div>");
+
+        return sb.ToString();
+
+    }
 
 }
