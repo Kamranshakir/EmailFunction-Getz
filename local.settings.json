@@ -14,6 +14,10 @@
     "ClientId": "69cceed7-70fd-4b81-bc57-df25c661fc0f",
     "ClientSecret": "V7P8Q~pqFje4t5q1QpxGl-0pF_BpJ~S1TlPh-cTI",
     "SiteId": "sepiahost.sharepoint.com,6912fee1-9f4f-4aff-85be-8070a6b6ad07,c804f247-3aaf-4352-ba94-bbe0f35f30dd",
-    "BaseUrl": "http://localhost:7065/api/SendEmail"
+    "BaseUrl": "http://localhost:7065/api/SendEmail",
+    "ProcessAppsData_Timer": "0 5 * * * *",
+    "ProcessUserEmailData_Timer": "0 6 * * * *",
+    "MY_PENDING_URL": "https://google.com/"
   }
+
 }
